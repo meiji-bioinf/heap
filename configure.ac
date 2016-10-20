@@ -14,7 +14,7 @@ CXXFLAGS="$cxxflags_save"
 test -n "$CXXFLAGS" || CXXFLAGS="-g -Wall -O3"
 
 # Checks for libraries.
-LIBS="-lboost_system -lboost_thread-mt -lboost_program_options -lhts"
+LIBS="-lboost_system -lboost_thread -lboost_program_options -lhts"
 
 # Checks for header files.
 AC_CHECK_HEADERS([iostream])

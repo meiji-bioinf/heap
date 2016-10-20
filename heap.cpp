@@ -1465,8 +1465,8 @@ int main(int argc, char *argv[]){
 		string version;
 		getline(ifs, version);
 		cout << "bcftools version " << version << endl;
-		if(string2int(version) >= 1.2){
-			cout << "bcftools version 1.2 or more is required" << endl;
+		if(string2int(version) >= 1.1){
+			cout << "bcftools version 1.1 or more is required" << endl;
 			exit(-1);
 		}
 		ifs.close();

@@ -79,7 +79,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = heap$(EXEEXT)
 subdir = .
-DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
+DIST_COMMON = README AUTHORS ChangeLog \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
 	$(srcdir)/config.h.in depcomp $(include_HEADERS) COPYING \

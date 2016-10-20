@@ -1,7 +1,7 @@
 Heap
 ===============
 
-Recent availability of large scale genomic resources enables us to conduct so called genome-wide association studies (GWAS) and genomic prediction (GP) studies, particularly with next-generation sequencing (NGS) data. The effectiveness of GWAS and GP depends on not only their mathematical models, but the quality and quantity of variants employed in the analysis. In NGS single nucleotide polymorphism (SNP) calling, conventional tools ideally require more reads for higher SNP sensitivity and accuracy. In this study, we aimed to develop a tool, 'HEAP', that enables robustly sensitive and accurate calling of SNPs, particularly with a low coverage NGS data. Performance comparison with existing tools showed that HEAP achieved the highest F-scores with low coverage (~7) RAD-seq reads of sorghum and rice individuals. This will facilitate cost-effective GWAS and GP studies in this NGS era. HEAP codes and documents are freely available from https://github.com/meiji-bioinf/heap and our web site (http://bioinf.mind.meiji.ac.jp/lab/en/tools.html).
+Recent availability of large scale genomic resources enables us to conduct so called genome-wide association studies (GWAS) and genomic prediction (GP) studies, particularly with next-generation sequencing (NGS) data. The effectiveness of GWAS and GP depends on not only their mathematical models, but the quality and quantity of variants employed in the analysis. In NGS single nucleotide polymorphism (SNP) calling, conventional tools ideally require more reads for higher SNP sensitivity and accuracy. In this study, we aimed to develop a tool, ÅeHeapÅf, that enables robustly sensitive and accurate calling of SNPs, particularly with a low coverage NGS data. Heap calls SNPs from NGS reads, which are aligned to the reference genome sequences in advance. Performance comparison with existing tools showed that Heap achieved the highest F-scores with low coverage (7X) restriction-site associated DNA (RAD) sequencing reads of sorghum and rice individuals. This will facilitate cost-effective GWAS and GP studies in this NGS era. Heap code and documentation are freely available from https://github.com/meiji-bioinf/heap and our web site (http://bioinf.mind.meiji.ac.jp/lab/en/tools.html).
 
 ##1. Version
 	0.7.8
@@ -31,7 +31,7 @@ If boost libraries are not installed in your machine, please install boost libra
 ###ii. [HTSlib](https://github.com/samtools/htslib/) (version 1.1 or more)
 Heap use `bgzip` and `tabix` commands of HTSlib to compress and index VCFs.
 
-###iii. [BCFtools](https://github.com/samtools/bcftools/) (version 1.2 or more)
+###iii. [BCFtools](https://github.com/samtools/bcftools/) (version 1.1 or more)
 Heap use a `merge` command of BCFtools to merge raw VCFs, which are created by Heap with each BAM file.
 Heap also use a `view` command of BCFtools to drop off allele count < 1 and trim alternate alleles not seen in subset.
 
@@ -55,9 +55,12 @@ If HTSlib had been installed to your specified prefix, execute `./configure` and
 	  LDFLAGS="-Wl,-rpath -Wl,/path/to/htslib-1.2.1/lib/ -L/path/to/htslib-1.2.1/lib/" \
 	  CPPFLAGS="-I/path/to/htslib-1.2.1/include/"
 
-If your system is Fedora or Ubuntu, execute `make` with `LIBS` as follows, because a name of a library boost_thread is substituted `boost_thread` on Fedora and Ubuntu for `boost_thread-mt` on CentOS and Mac OS X.
+If compilation is failed with error massage such as `cannot find -lboost_thread`, please try `make` with `LIBS` as follows.
 
-	$ make LIBS="-lboost_system -lboost_thread -lboost_program_options -lhts"
+	$ make \
+	  LDFLAGS="-Wl,-rpath -Wl,/path/to/htslib-1.2.1/lib/ -L/path/to/htslib-1.2.1/lib/" \
+	  CPPFLAGS="-I/path/to/htslib-1.2.1/include/" \
+	  LIBS="-lboost_system -lboost_thread-mt -lboost_program_options -lhts"
 
 Finally, install heap by `sudo make install`
 
