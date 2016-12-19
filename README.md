@@ -91,30 +91,34 @@ If HTSlib and/or BCFtools had been installed to your specified prefix, add path 
 
 Please execute Heap with -h for an operation check.
 
-	$ heap -h
-	/usr/local/bin/bgzip
-	/usr/local/bin/tabix
-	/usr/local/bin/bcftools
-	bcftools version 1.2
-	options:
-	  -v [ --version ]                      Show version
-	  -h [ --help ]                         show help
-	  -r [ --ref ] arg                      Reference sequences had been used for 
-	                                        the mapping in FASTA format
-	  -i [ --in_files ] arg                 Aligned reads in BAM or SAM format 
-	                                        which must be sorted
-	  -o [ --out_file ] arg                 Prefix of output VCF file
-	  -m [ --min_mapq ] arg (=20)           Minimum of MAPQ
-	  -b [ --min_base_qual ] arg (=13)      Minimum of phred scaled base quality 
-	                                        score
-	  -d [ --min_depth ] arg (=3)           Minimum of read depth
-	  -e [ --del_end_length ] arg (=2)      Deletion length at the both ends of 
-	                                        reads (for RAD-Seq, 2 is recommended)
-	  -l [ --ignore_indel_length ] arg (=5) Ignoring length of region neighboring 
-	                                        INDELs
-	  -t [ --thread_num ] arg (=1)          Number of threads
-	  -p [ --p_val ] arg (=0.0500000007)    P-value for Chi-squared test in 
-	                                        genotyping
+```
+
+$ ./heap -h
+/usr/bin/bgzip
+/usr/bin/tabix
+/usr/bin/bcftools
+bcftools version 1.3.1
+Heap options. Default values are presented in '()'.:
+  -v [ --version ]                      Show version
+  -h [ --help ]                         Show help
+  -r [ --ref ] arg                      Reference sequences used for the 
+					mapping in FASTA format
+  -i [ --in_files ] arg                 Aligned reads in BAM or SAM format 
+					which must be sorted
+  -o [ --out_file ] arg                 Prefix of output VCF file
+  -m [ --min_mapq ] arg (=20)           Minimum MAPQ value
+  -b [ --min_base_qual ] arg (=13)      Minimum phred scaled base quality score
+  -d [ --min_depth ] arg (=3)           Minimum read depth
+  -e [ --del_end_length ] arg (=2)      Deletion length at the both ends of 
+					reads (for RAD-Seq, 2 is recommended)
+  -l [ --ignore_indel_length ] arg (=5) Length of INDEL flanking regions to 
+					ignore
+  -t [ --thread_num ] arg (=1)          Number of threads
+  -p [ --p_val ] arg (=0.0500000007)    P-value for Chi-squared test in 
+					genotyping
+
+
+```
 
 In this version of Heap, BAM or SAM created by [Burrows-Wheeler Aligner(BWA)](http://bio-bwa.sourceforge.net/index.shtml) is only supported.
 
