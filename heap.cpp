@@ -1489,7 +1489,7 @@ int main(int argc, char *argv[]){
 	string start_time_str = time_str();
 
 	// prepare object for program options
-	options_description opt("Heap options. Default values are presented in '()'.");
+	options_description opt("Heap options. Default values are presented in '()'");
 
 	// definition of options
 	opt.add_options()
