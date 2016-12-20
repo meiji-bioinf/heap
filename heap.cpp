@@ -1489,20 +1489,20 @@ int main(int argc, char *argv[]){
 	string start_time_str = time_str();
 
 	// prepare object for program options
-	options_description opt("options");
+	options_description opt("Heap options. Default values are presented in '()'");
 
 	// definition of options
 	opt.add_options()
 		("version,v", "Show version")
-		("help,h", "show help")
-		("ref,r", value<string>(), "Reference sequences had been used for the mapping in FASTA format")
+		("help,h", "Show help")
+		("ref,r", value<string>(), "Reference sequences used for the mapping in FASTA format")
 		("in_files,i", value<vector<string> >(), "Aligned reads in BAM or SAM format which must be sorted")
 		("out_file,o", value<string>(), "Prefix of output VCF file")
-		("min_mapq,m", value<int>()->default_value(20), "Minimum of MAPQ")
-		("min_base_qual,b", value<int>()->default_value(13), "Minimum of phred scaled base quality score")
-		("min_depth,d", value<unsigned int>()->default_value(3), "Minimum of read depth")
+		("min_mapq,m", value<int>()->default_value(20), "Minimum MAPQ value")
+		("min_base_qual,b", value<int>()->default_value(13), "Minimum phred scaled base quality score")
+		("min_depth,d", value<unsigned int>()->default_value(3), "Minimum read depth")
 		("del_end_length,e", value<int>()->default_value(2), "Deletion length at the both ends of reads (for RAD-Seq, 2 is recommended)")
-		("ignore_indel_length,l", value<int>()->default_value(5), "Ignoring length of region neighboring INDELs")
+		("ignore_indel_length,l", value<int>()->default_value(5), "Length of INDEL flanking regions to ignore")
 		("thread_num,t", value<unsigned int>()->default_value(1), "Number of threads")
 		("p_val,p", value<float>()->default_value(0.05), "P-value for Chi-squared test in genotyping")
 	;
