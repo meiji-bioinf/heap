@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT(heap, 0.78, mcova@meiji.ac.jp)
-AM_INIT_AUTOMAKE(heap, 0.7.8, no-define)
+AC_INIT(heap, 0.79, mcova@meiji.ac.jp)
+AM_INIT_AUTOMAKE(heap, 0.7.9, no-define)
 AC_CONFIG_SRCDIR([heap.cpp])
 AC_CONFIG_HEADERS([config.h])
 
@@ -18,6 +18,7 @@ LIBS="-lboost_system -lboost_thread -lboost_program_options -lhts"
 
 # Checks for header files.
 AC_CHECK_HEADERS([iostream])
+AC_CHECK_HEADERS([math.h])
 AC_CHECK_HEADERS([string])
 AC_CHECK_HEADERS([sstream])
 AC_CHECK_HEADERS([fstream])

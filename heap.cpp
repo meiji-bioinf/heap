@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <math.h>
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -290,7 +291,7 @@ private:
 	unordered_map<string, unordered_map<int, int> > indel; // regions neighboring indels
 	map<string, map<int, string> > seq_pile; // pileup sequences
 
-	float x2_1; // the x2 value for chi-squared test
+	float p_val; // the p value for binomial test
 
 	string heap_command; // commands of heap
 	string ref_vcf; // vcf records to output
@@ -310,7 +311,11 @@ public:
 	void markNeiIndels(); // mark regions neighboring INDELs
 	void pileup(); // pileup sequences
 	vector<string> convVcf(string chr, int pos, string seq); // convert pileup to VCF
-	string chiTestForGeno(float ad1, float ad2, float ad1loc, float ad2loc);
+	string binomialTestForGeno(float ad1, float ad2, float ad1loc, float ad2loc);
+	double factorialLog(int k, int l);
+	double binomialDensity(int a, int n, float p);
+	double binomialP(int a, int n, float p);
+	double powLog(float a, int b);
 	void getNextAlnForBAM(); // Get next read alignment data
 	void cleanVariablesForSAM(); // clean variables for the next sam record
 	void printVcf(); // print VCF
@@ -325,7 +330,7 @@ void Heap::set(int num1, int num2, int num3, int num4, int num5, char* inf, char
 	min_depth = num5;
 	in_file_name = inf;
 	out_file_name = ouf;
-	x2_1 = flo1;
+	p_val = flo1;
 	heap_command = str1;
 	ref_file = rfn;
 }
@@ -805,10 +810,9 @@ void Heap::pileup(){
 		}
 	}
 }
-string Heap::chiTestForGeno(float ad1, float ad2, float ad1loc, float ad2loc){
+string Heap::binomialTestForGeno(float ad1, float ad2, float ad1loc, float ad2loc){
 	string GT = "NA";
-	float e = (ad1 + ad2) / 2;
-	float x2 = ( (ad1 - e) * (ad1 - e) / e ) + ( (ad2 - e) * (ad2 - e) / e );
+	float p = binomialP(ad1, ad1 + ad2, 0.5);
 	if(ad2 < 1){
 		if(ad1loc == 0 && ad2loc == 1){
 			GT = "0/0";
@@ -840,7 +844,7 @@ string Heap::chiTestForGeno(float ad1, float ad2, float ad1loc, float ad2loc){
 		}
 		return GT;
 	}else{
-		if(x2 > x2_1 && ad1 > ad2){
+		if(p < p_val && ad1 > ad2){
 			if(ad1loc == 0 && ad2loc == 1){
 				GT = "0/0";
 			}else if(ad1loc == 0 && ad2loc == 2){
@@ -854,7 +858,7 @@ string Heap::chiTestForGeno(float ad1, float ad2, float ad1loc, float ad2loc){
 			}else if(ad1loc == 2 && ad2loc == 3){
 				GT = "2/2";
 			}
-		}else if(x2 > x2_1 && ad1 < ad2){
+		}else if(p < p_val && ad1 < ad2){
 			if(ad1loc == 0 && ad2loc == 1){
 				GT = "1/1";
 			}else if(ad1loc == 0 && ad2loc == 2){
@@ -907,6 +911,45 @@ string Heap::chiTestForGeno(float ad1, float ad2, float ad1loc, float ad2loc){
 	}
 	return GT;
 }
+double Heap::binomialP(int a, int n, float p){
+	if(a >= n / 2){
+		a = n - a;
+	}
+	double ret = 0;
+	for(int i = 0; i <= a; i++){
+		double d = binomialDensity(i, n, 0.5);
+		if(i <= a || i >= n - a){
+			ret += d;
+		}
+	}
+	ret *= 2;
+	if(ret > 1){
+		ret = 1;
+	}
+	return ret;
+}
+double Heap::binomialDensity(int a, int n, float p){
+	double d = factorialLog(n, n - a + 1) - factorialLog(a, 1);
+	d += powLog(0.5, a);
+	d += powLog(0.5, n - a);
+	d = pow(10, d);
+	return d;
+}
+double Heap::factorialLog(int k, int l){
+	double ret = 0;
+	for (float i = l; i <= k; i++){
+		ret += log10(i);
+	}
+	return ret;
+}
+double Heap::powLog(float a, int b){
+	double ret = 0;
+	double log_a = log10(a);
+	for(int i = 1; i <= b; i++){
+		ret += log_a;
+	}
+	return ret;
+}
 vector<string> Heap::convVcf(string chr, int pos, string seq){
 	string ref = char2string(ref_map[chr][pos]);
 	string GT = "NA";
@@ -946,7 +989,7 @@ vector<string> Heap::convVcf(string chr, int pos, string seq){
 		}else if(ad_ref == 0 && ad_ale != 0){
 			GT = "1/1";
 		}else{
-			GT = chiTestForGeno(ad_ref, ad_ale, 0, 1);
+			GT = binomialTestForGeno(ad_ref, ad_ale, 0, 1);
 		}
 		EC = float2string(ad_ale);
 	}else if(ad.size() == 3){
@@ -985,42 +1028,42 @@ vector<string> Heap::convVcf(string chr, int pos, string seq){
 			if(ad_ref == ad_ale1 && ad_ref == ad_ale2 && ad_ale1 == ad_ale2){
 				GT = "./.";
 			}else if(ad_ref == ad_ale1 && ad_ref > ad_ale2){
-				GT = chiTestForGeno(ad_ref, ad_ale1, 0, 1);
+				GT = binomialTestForGeno(ad_ref, ad_ale1, 0, 1);
 			}else if(ad_ref == ad_ale2 && ad_ref > ad_ale1){
-				GT = chiTestForGeno(ad_ref, ad_ale2, 0, 2);
+				GT = binomialTestForGeno(ad_ref, ad_ale2, 0, 2);
 			}else if(ad_ale1 == ad_ale2 && ad_ale1 > ad_ref){
-				GT = chiTestForGeno(ad_ale1, ad_ale2, 1, 2);
+				GT = binomialTestForGeno(ad_ale1, ad_ale2, 1, 2);
 			}else if(ad_ref == ad_ale1 && ad_ale2 > ad_ref){
-				if(chiTestForGeno(ad_ref, ad_ale2, 0, 2) == chiTestForGeno(ad_ale1, ad_ale2, 1, 2)){
-					GT = chiTestForGeno(ad_ref, ad_ale2, 0, 2);
+				if(binomialTestForGeno(ad_ref, ad_ale2, 0, 2) == binomialTestForGeno(ad_ale1, ad_ale2, 1, 2)){
+					GT = binomialTestForGeno(ad_ref, ad_ale2, 0, 2);
 				}else{
 					GT = "./.";
 				}
 			}else if(ad_ref == ad_ale2 && ad_ale1 > ad_ref){
-				if(chiTestForGeno(ad_ref, ad_ale1, 0, 1) == chiTestForGeno(ad_ale1, ad_ale2, 1, 2)){
-					GT = chiTestForGeno(ad_ref, ad_ale1, 0, 1);
+				if(binomialTestForGeno(ad_ref, ad_ale1, 0, 1) == binomialTestForGeno(ad_ale1, ad_ale2, 1, 2)){
+					GT = binomialTestForGeno(ad_ref, ad_ale1, 0, 1);
 				}else{
 					GT = "./.";
 				}
 			}else if(ad_ale1 == ad_ale2 && ad_ref > ad_ale1){
-				if(chiTestForGeno(ad_ref, ad_ale1, 0, 1) == chiTestForGeno(ad_ref, ad_ale2, 0, 2)){
-					GT = chiTestForGeno(ad_ref, ad_ale1, 0, 1);
+				if(binomialTestForGeno(ad_ref, ad_ale1, 0, 1) == binomialTestForGeno(ad_ref, ad_ale2, 0, 2)){
+					GT = binomialTestForGeno(ad_ref, ad_ale1, 0, 1);
 				}else{
 					GT = "./.";
 				}
 			}else{
-				if(chiTestForGeno(ad_ref, ad_ale1, 0, 1) == chiTestForGeno(ad_ref, ad_ale2, 0, 2)){
-					GT = chiTestForGeno(ad_ref, ad_ale1, 0, 1);
-				}else if(chiTestForGeno(ad_ref, ad_ale1, 0, 1) == chiTestForGeno(ad_ale1, ad_ale2, 1, 2)){
-					GT = chiTestForGeno(ad_ref, ad_ale1, 0, 1);
-				}else if(chiTestForGeno(ad_ref, ad_ale2, 0, 2) == chiTestForGeno(ad_ale1, ad_ale2, 1, 2)){
-					GT = chiTestForGeno(ad_ref, ad_ale2, 0, 2);
-				}else if(chiTestForGeno(ad_ref, ad_ale1, 0, 1)[0] != chiTestForGeno(ad_ref, ad_ale1, 0, 1)[2]){
-					GT = chiTestForGeno(ad_ref, ad_ale1, 0, 1);
-				}else if(chiTestForGeno(ad_ref, ad_ale2, 0, 2)[0] != chiTestForGeno(ad_ref, ad_ale2, 0, 2)[2]){
-					GT = chiTestForGeno(ad_ref, ad_ale2, 0, 2);
-				}else if(chiTestForGeno(ad_ale1, ad_ale2, 1, 2)[0] != chiTestForGeno(ad_ale1, ad_ale2, 1, 2)[2]){
-					GT = chiTestForGeno(ad_ale1, ad_ale2, 1, 2);
+				if(binomialTestForGeno(ad_ref, ad_ale1, 0, 1) == binomialTestForGeno(ad_ref, ad_ale2, 0, 2)){
+					GT = binomialTestForGeno(ad_ref, ad_ale1, 0, 1);
+				}else if(binomialTestForGeno(ad_ref, ad_ale1, 0, 1) == binomialTestForGeno(ad_ale1, ad_ale2, 1, 2)){
+					GT = binomialTestForGeno(ad_ref, ad_ale1, 0, 1);
+				}else if(binomialTestForGeno(ad_ref, ad_ale2, 0, 2) == binomialTestForGeno(ad_ale1, ad_ale2, 1, 2)){
+					GT = binomialTestForGeno(ad_ref, ad_ale2, 0, 2);
+				}else if(binomialTestForGeno(ad_ref, ad_ale1, 0, 1)[0] != binomialTestForGeno(ad_ref, ad_ale1, 0, 1)[2]){
+					GT = binomialTestForGeno(ad_ref, ad_ale1, 0, 1);
+				}else if(binomialTestForGeno(ad_ref, ad_ale2, 0, 2)[0] != binomialTestForGeno(ad_ref, ad_ale2, 0, 2)[2]){
+					GT = binomialTestForGeno(ad_ref, ad_ale2, 0, 2);
+				}else if(binomialTestForGeno(ad_ale1, ad_ale2, 1, 2)[0] != binomialTestForGeno(ad_ale1, ad_ale2, 1, 2)[2]){
+					GT = binomialTestForGeno(ad_ale1, ad_ale2, 1, 2);
 				}else{
 					GT = "./.";
 				}
@@ -1046,8 +1089,6 @@ vector<string> Heap::convVcf(string chr, int pos, string seq){
 
 	ad.clear();
 	return result;
-
-//	result.clear();
 }
 void Heap::printVcf(){
 	ofstream vcf_ofs(out_file_name, ios::app);
@@ -1157,7 +1198,7 @@ void Heap::run(){
 	// write header of vcf
 	ofstream vcf_ofs(out_file_name);
 	vcf_ofs << "##fileformat=VCFv4.2" << endl;
-	vcf_ofs << "##source=\"Heap v0.7.8\"" << endl;
+	vcf_ofs << "##source=\"Heap v0.7.9\"" << endl;
 	vcf_ofs << "##HeapCommand=" << heap_command;
 	vcf_ofs << ref_vcf;
 	vcf_ofs << "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" << endl;
@@ -1426,7 +1467,7 @@ int main(int argc, char *argv[]){
 	setvbuf(stdout, (char *)NULL, _IONBF, 0); // disablement of output buffer to overwrite of progress
 	setlocale(LC_NUMERIC,"ja_JP.utf8"); // setlocale to show number with comma
 
-	string version = "Heap version 0.7.8";
+	string version = "Heap version 0.7.9";
 
 	// test required tools
 	// check bgzip
@@ -1489,12 +1530,12 @@ int main(int argc, char *argv[]){
 	string start_time_str = time_str();
 
 	// prepare object for program options
-	options_description opt("Heap options. Default values are presented in '()'");
+	options_description opt("Heap version 0.7.9 options. Default values are presented in '()'.");
 
 	// definition of options
 	opt.add_options()
 		("version,v", "Show version")
-		("help,h", "Show help")
+		("help,h", "show help")
 		("ref,r", value<string>(), "Reference sequences used for the mapping in FASTA format")
 		("in_files,i", value<vector<string> >(), "Aligned reads in BAM or SAM format which must be sorted")
 		("out_file,o", value<string>(), "Prefix of output VCF file")
@@ -1504,7 +1545,7 @@ int main(int argc, char *argv[]){
 		("del_end_length,e", value<int>()->default_value(2), "Deletion length at the both ends of reads (for RAD-Seq, 2 is recommended)")
 		("ignore_indel_length,l", value<int>()->default_value(5), "Length of INDEL flanking regions to ignore")
 		("thread_num,t", value<unsigned int>()->default_value(1), "Number of threads")
-		("p_val,p", value<float>()->default_value(0.05), "P-value for Chi-squared test in genotyping")
+		("p_val,p", value<float>()->default_value(0.05), "P-value for binomial test in genotyping")
 	;
 	// analyze options
 	variables_map argmap;
@@ -1548,18 +1589,6 @@ int main(int argc, char *argv[]){
 	int ignore_indel_length = argmap["ignore_indel_length"].as<int>();
 	unsigned int thread_num = argmap["thread_num"].as<unsigned int>();
 	float p_val = argmap["p_val"].as<float>();
-	int comp_p = static_cast<int>(round(p_val * 100));
-	float x2_1 = 0;
-	if(comp_p == 1){
-		x2_1 = 6.634896601;
-	}else if(comp_p == 5){
-		x2_1 = 3.841458821;
-	}else if(comp_p == 10){
-		x2_1 = 2.705543454;
-	}else{
-		cout << endl << "Error: p_val is accepted only 0.01, 0.05 or 0.1." << endl;
-		exit(1);
-	}
 
 	// print execute parameters
 	cout << "path/to/ref.fasta: " << ref_file << endl;
@@ -1573,7 +1602,7 @@ int main(int argc, char *argv[]){
 	cout << "Min depth: " << min_depth << endl;
 	cout << "length of read end deletion: " << del_end_length << endl;
 	cout << "Number of threads: " << thread_num << endl;
-	cout << "P-value for Chi-square test: " << p_val << "(x2=" << x2_1 << ")" << endl;
+	cout << "P-value for binomial test: " << p_val << endl;
 
 	// genotyping and SNP calling
 	cout << "START: genotyping and SNP calling " << time() <<  endl;
@@ -1586,7 +1615,7 @@ int main(int argc, char *argv[]){
 			Heap *heap = new Heap[thread_num];
 			for(unsigned int i = 0; i < thread_num; i++){
 				vcf_file_name.push_back(removeFilePath(in_files[f]) + ".raw.vcf");
-				heap[i].set(min_mapq, min_base_qual, del_end_length, ignore_indel_length, min_depth, string2char2(in_files[f]), string2char2(vcf_file_name[f]), x2_1, heap_command, string2char2(ref_file));
+				heap[i].set(min_mapq, min_base_qual, del_end_length, ignore_indel_length, min_depth, string2char2(in_files[f]), string2char2(vcf_file_name[f]), p_val, heap_command, string2char2(ref_file));
 				thr_grp.create_thread(bind(&Heap::run, &heap[i]));
 				f++;
 			}
@@ -1600,7 +1629,7 @@ int main(int argc, char *argv[]){
 			Heap *heap = new Heap[rest_files_num];
 			for(unsigned int i = 0; i < rest_files_num; i++){
 				vcf_file_name.push_back(removeFilePath(in_files[f]) + ".raw.vcf");
-				heap[i].set(min_mapq, min_base_qual, del_end_length, ignore_indel_length, min_depth, string2char2(in_files[f]), string2char2(vcf_file_name[f]), x2_1, heap_command, string2char2(ref_file));
+				heap[i].set(min_mapq, min_base_qual, del_end_length, ignore_indel_length, min_depth, string2char2(in_files[f]), string2char2(vcf_file_name[f]), p_val, heap_command, string2char2(ref_file));
 				thr_grp.create_thread(bind(&Heap::run, &heap[i]));
 				f++;
 			}
@@ -1610,12 +1639,7 @@ int main(int argc, char *argv[]){
 			f--;
 		}
 
-	}
-	cout << "END: genotyping and SNP calling " << time() <<  endl;
-
-	// bgzip raw VCFs each sample
-	cout << "START: bgzip " << time() <<  endl;
-	for(unsigned int f = 0; f < vcf_file_name.size(); f++){
+		// bgzip raw VCFs each sample
 		string command = "bgzip -f " + vcf_file_name[f];
 		string command_echo = "echo " + command;
 		std::system(string2char2(command_echo));
@@ -1624,8 +1648,9 @@ int main(int argc, char *argv[]){
 		command_echo = "echo " + command;
 		std::system(string2char2(command_echo));
 		std::system(string2char2(command));
+
 	}
-	cout << "END: bgzip " << time() <<  endl;
+	cout << "END: genotyping and SNP calling " << time() <<  endl;
 
 	// merge raw VCFs and filter (drop off allele count < 1 and trim alternate alleles not seen in subset) merged VCF to output final VCF
 	if(vcf_file_name.size()>1){
