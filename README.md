@@ -3,11 +3,11 @@ Heap
 
 Recent availability of large scale genomic resources enables us to conduct so called genome-wide association studies (GWAS) and genomic prediction (GP) studies, particularly with next-generation sequencing (NGS) data. The effectiveness of GWAS and GP depends on not only their mathematical models, but the quality and quantity of variants employed in the analysis. In NGS single nucleotide polymorphism (SNP) calling, conventional tools ideally require more reads for higher SNP sensitivity and accuracy. In this study, we aimed to develop a tool, Heap, that enables robustly sensitive and accurate calling of SNPs, particularly with a low coverage NGS data, which must be aligned to the reference genome sequences in advance. To reduce false positive SNPs, Heap determines genotypes and calls SNPs at each site except for sites at the both end of reads or containing a minor allele supported by only one read. Performance comparison with existing tools showed that Heap achieved the highest F-scores with low coverage (7X) restriction-site associated DNA sequencing reads of sorghum and rice individuals. This will facilitate cost-effective GWAS and GP studies in this NGS era. Code and documentation of Heap are freely available from https://github.com/meiji-bioinf/heap and our web site (http://bioinf.mind.meiji.ac.jp/lab/en/tools.html).
 
-##1. Version
+## 1. Version
 
 	0.7.9
 
-##2. Algorithm
+## 2. Algorithm
 
 We designed Heap to identify SNPs from short read sequences of diploid species. In Heap analysis, short read sequences must be aligned to reference genome sequences in advance, and information on aligned reads, which is stored in either Sequence Alignment/MAP (SAM) format files or the binary version of [SAM (BAM) format files](https://samtools.github.io/hts-specs/SAMv1.pdf), must be employed.
 
@@ -17,40 +17,86 @@ Next, Heap genotypes within the determined high quality region in each sample. O
 
 Heap then performs SNP calling by comparing the genotypes between the sample (e.g. an inbred line) and the reference genome. The information on all SNPs between the sample and the reference genome is stored in a [Variant Call Format (VCF)](http://www.internationalgenome.org/wiki/Analysis/variant-call-format/) file. Finally, to determine SNPs among all samples, the VCF files for all samples are merged in a single VCF file by [BCFtools](https://github.com/samtools/bcftools/).
 
-##3. OS
+## 3. OS
 
 Heap was tested on CentOS 6.6, Fedora 21, Ubuntu 15.04 and Mac OS X yosemite.
 
-##4. Required tools
+## 4. Docker image
 
-###i. [Boost C++ Libraries](http://www.boost.org/)
+A Docker image [centos7_heap_v0.7.9_dockerImage.tar.gz](http://bioinf.mind.meiji.ac.jp/lab/en/download/centos7_heap_v0.7.9_dockerImage.tar.gz) (216 MB) of heap on CentOS7 with required tools is available. This docker image enables you to use heap easily without installing requeired tools and heap. In advance, please install Docker on your machine according to [Docker offical web site](https://www.docker.com/). Docker is available not only on Linux OS but also MacOS and Windows10.
+
+### i. Load the image to Docker
+
+In advance load the image, please uncompress the image file as below.
+
+```
+$ gunzip centos7_heap_v0.7.9_dockerImage.tar.gz
+```
+
+The uncompressed image is able to load to Docker as below.
+
+```
+$ docker load < centos7_heap_v0.7.9_dockerImage.tar
+```
+
+### ii. Create and login to a container
+
+To create a container from the image and login to the container, please execute `docker run` as below.
+
+```
+$ docker run -it centos7/heap:v0.7.9 /bin/sh
+```
+
+To refere a directory on your host machine including your data from a directory on the container, execute `docker run` with `-v` option as below.
+
+```
+$ docker run -v /Users/mkobayashi/Desktop/heap-0.7.9/testData:/testData -it centos7/heap:v0.7.9 /bin/sh
+```
+
+By the command, a directory `/Users/mkobayashi/Desktop/heap-0.7.9/testData` on the host machine will be mounted to `/testData` on the container.
+
+After the login to the container, you are able to call SNPs by using heap as described in follow sections.
+
+To login to the already exists container, check the id of the container by `docker ps -a`, start the container by `docker start`, and login to the container by `docker attach` as below.
+
+```
+$ docker ps -a
+CONTAINER ID        IMAGE                     COMMAND             CREATED             STATUS                     PORTS               NAMES
+00d873155a28        centos7/heap:v0.7.9       "/bin/sh"           2 hours ago         Exited (0) 6 seconds ago                       unruffled_rosalind
+$ docker start 00d873155a28
+$ docker attach 00d873155a28
+```
+
+## 5. Required tools
+
+### i. [Boost C++ Libraries](http://www.boost.org/)
 
 If boost libraries are not installed in your machine, please install boost libraries as below.
 
-####Installing boost for CentOS and Fedora
+#### Installing boost for CentOS and Fedora
 
 	$ sudo yum install -y boost-devel
 
-####Installing boost for Ubuntu
+#### Installing boost for Ubuntu
 
 	$ sudo apt-get install -y libboost-all-dev
 
-####Installing boost for OS X
+#### Installing boost for OS X
 
 	$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 	$ brew install boost
 
-###ii. [HTSlib](https://github.com/samtools/htslib/) (version 1.1 or more)
+### ii. [HTSlib](https://github.com/samtools/htslib/) (version 1.1 or more)
 
 Heap use `bgzip` and `tabix` commands of HTSlib to compress and index VCFs.
 
-###iii. [BCFtools](https://github.com/samtools/bcftools/) (version 1.1 or more)
+### iii. [BCFtools](https://github.com/samtools/bcftools/) (version 1.1 or more)
 
 Heap use a `merge` command of BCFtools to merge raw VCFs, which are created by Heap with each BAM file.
 
 Heap also use a `view` command of BCFtools to drop off allele count < 1 and trim alternate alleles not seen in subset.
 
-##5. Install
+## 6. Install
 
 Download heap-0.7.9.tar.gz and decompress the tarball.
 
@@ -81,7 +127,7 @@ Finally, install heap by `sudo make install`
 
 	$ sudo make install
 
-##6. Usage
+## 7. Usage
 
 If HTSlib and/or BCFtools had been installed to your specified prefix, add path of HTSlib and/or BCFtools previously execute Heap as follows.
 
@@ -121,9 +167,9 @@ In this version of Heap, BAM or SAM created by [Burrows-Wheeler Aligner(BWA)](ht
 
 BAM or SAM must be sorted previously with the tools such as [SAMtools](http://www.htslib.org/) or [Picard Tools](http://broadinstitute.github.io/picard/).
 
-##7. Examples
+## 8. Examples
 
-###i. Test data
+### i. Test data
 
 There is a test data in 'testData' directory.
 
@@ -134,7 +180,7 @@ RTx430.bam                              # Mapped RAD-seq reads obtained from RTx
 SOR_1.bam                               # Mapped RAD-seq reads obtained from GULUM_ABIAD SOR_1.
 ```
 
-###ii. SNP calling with the test data
+### ii. SNP calling with the test data
 
 To call SNPs with one sample simply with the test data, please execute `heap` as follows.
 
@@ -146,7 +192,7 @@ To call SNPs with multiple samples, please execute `heap` as follows.
 
 	$ heap -r Sbicolor_v2.1_255_Chr01_1-1000000.fa -i GULUM_ABIAD.bam -i RTx430.bam -i SOR_1.bam -o snp
 
-###iii. Result files of SNP calling with the test data
+### iii. Result files of SNP calling with the test data
 
 There are result files from SNP call with the test data in 'testResults' directory.
 
