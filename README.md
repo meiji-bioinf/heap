@@ -44,13 +44,13 @@ $ docker load < centos7_heap_v0.7.9_dockerImage.tar
 To create a container from the image and login to the container, please execute `docker run` as below.
 
 ```
-$ docker run -it centos7/heap:v0.7.9 /bin/sh
+$ docker run -it centos7/heap:v0.7.9 /bin/bash
 ```
 
 To refere a directory on your host machine including your data from a directory on the container, execute `docker run` with `-v` option as below.
 
 ```
-$ docker run -v /Users/mkobayashi/Desktop/heap-0.7.9/testData:/testData -it centos7/heap:v0.7.9 /bin/sh
+$ docker run -v /Users/mkobayashi/Desktop/heap-0.7.9/testData:/testData -it centos7/heap:v0.7.9 /bin/bash
 ```
 
 By the command, a directory `/Users/mkobayashi/Desktop/heap-0.7.9/testData` on the host machine will be mounted to `/testData` on the container.
@@ -62,7 +62,7 @@ To login to the already exists container, check the id of the container by `dock
 ```
 $ docker ps -a
 CONTAINER ID        IMAGE                     COMMAND             CREATED             STATUS                     PORTS               NAMES
-00d873155a28        centos7/heap:v0.7.9       "/bin/sh"           2 hours ago         Exited (0) 6 seconds ago                       unruffled_rosalind
+00d873155a28        centos7/heap:v0.7.9       "/bin/bash"         2 hours ago         Exited (0) 6 seconds ago                       unruffled_rosalind
 $ docker start 00d873155a28
 $ docker attach 00d873155a28
 ```
