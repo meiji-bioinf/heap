@@ -5,7 +5,7 @@ Recent availability of large scale genomic resources enables us to conduct so ca
 
 ## 1. Version
 
-	0.7.9
+	0.8.0
 
 ## 2. Algorithm
 
@@ -23,20 +23,20 @@ Heap was tested on CentOS 6.6, Fedora 21, Ubuntu 15.04 and Mac OS X yosemite.
 
 ## 4. Docker image
 
-A Docker image [centos7_heap_v0.7.9_dockerImage.tar.gz](http://bioinf.mind.meiji.ac.jp/lab/en/download/centos7_heap_v0.7.9_dockerImage.tar.gz) (216 MB) of heap on CentOS7 with required tools is available. This docker image enables you to use heap easily without installing requeired tools and heap. In advance, please install Docker on your machine according to [Docker offical web site](https://www.docker.com/). Docker is available not only on Linux OS but also MacOS and Windows10.
+A Docker image [centos7_heap_v0.8.0_dockerImage.tar.gz](http://bioinf.mind.meiji.ac.jp/lab/en/download/centos7_heap_v0.8.0_dockerImage.tar.gz) (216 MB) of heap on CentOS7 with required tools is available. This docker image enables you to use heap easily without installing requeired tools and heap. In advance, please install Docker on your machine according to [Docker offical web site](https://www.docker.com/). Docker is available not only on Linux OS but also MacOS and Windows10.
 
 ### i. Load the image to Docker
 
 In advance load the image, please uncompress the image file as below.
 
 ```
-$ gunzip centos7_heap_v0.7.9_dockerImage.tar.gz
+$ gunzip centos7_heap_v0.8.0_dockerImage.tar.gz
 ```
 
 The uncompressed image is able to load to Docker as below.
 
 ```
-$ docker load < centos7_heap_v0.7.9_dockerImage.tar
+$ docker load < centos7_heap_v0.8.0_dockerImage.tar
 ```
 
 ### ii. Create and login to a container
@@ -44,16 +44,16 @@ $ docker load < centos7_heap_v0.7.9_dockerImage.tar
 To create a container from the image and login to the container, please execute `docker run` as below.
 
 ```
-$ docker run -it centos7/heap:v0.7.9 /bin/bash
+$ docker run -it centos7/heap:v0.8.0 /bin/sh
 ```
 
 To refere a directory on your host machine including your data from a directory on the container, execute `docker run` with `-v` option as below.
 
 ```
-$ docker run -v /Users/mkobayashi/Desktop/heap-0.7.9/testData:/testData -it centos7/heap:v0.7.9 /bin/bash
+$ docker run -v /Users/mkobayashi/Desktop/heap-0.8.0/testData:/testData -it centos7/heap:v0.8.0 /bin/sh
 ```
 
-By the command, a directory `/Users/mkobayashi/Desktop/heap-0.7.9/testData` on the host machine will be mounted to `/testData` on the container.
+By the command, a directory `/Users/mkobayashi/Desktop/heap-0.8.0/testData` on the host machine will be mounted to `/testData` on the container.
 
 After the login to the container, you are able to call SNPs by using heap as described in follow sections.
 
@@ -62,7 +62,7 @@ To login to the already exists container, check the id of the container by `dock
 ```
 $ docker ps -a
 CONTAINER ID        IMAGE                     COMMAND             CREATED             STATUS                     PORTS               NAMES
-00d873155a28        centos7/heap:v0.7.9       "/bin/bash"         2 hours ago         Exited (0) 6 seconds ago                       unruffled_rosalind
+00d873155a28        centos7/heap:v0.8.0       "/bin/sh"           2 hours ago         Exited (0) 6 seconds ago                       unruffled_rosalind
 $ docker start 00d873155a28
 $ docker attach 00d873155a28
 ```
@@ -98,10 +98,10 @@ Heap also use a `view` command of BCFtools to drop off allele count < 1 and trim
 
 ## 6. Install
 
-Download heap-0.7.9.tar.gz and decompress the tarball.
+Download heap-0.8.0.tar.gz and decompress the tarball.
 
-	$ tar xzvf heap-0.7.9.tar.gz
-	$ cd heap-0.7.9
+	$ tar xzvf heap-0.8.0.tar.gz
+	$ cd heap-0.8.0
 
 Then, configure by `./configure`.
 
@@ -143,7 +143,7 @@ $ ./heap -h
 /usr/bin/tabix
 /usr/bin/bcftools
 bcftools version 1.3.1
-Heap version 0.7.9 options. Default values are presented in '()'.:
+Heap version 0.8.0 options. Default values are presented in '()'.:
   -v [ --version ]                      Show version
   -h [ --help ]                         show help
   -r [ --ref ] arg                      Reference sequences used for the

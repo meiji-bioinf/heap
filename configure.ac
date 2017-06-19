@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT(heap, 0.79, mcova@meiji.ac.jp)
-AM_INIT_AUTOMAKE(heap, 0.7.9, no-define)
+AC_INIT(heap, 0.80, mcova@meiji.ac.jp)
+AM_INIT_AUTOMAKE(heap, 0.8.0, no-define)
 AC_CONFIG_SRCDIR([heap.cpp])
 AC_CONFIG_HEADERS([config.h])
 

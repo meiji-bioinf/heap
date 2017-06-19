@@ -1,7 +1,7 @@
 /*
  * heap.cpp
  *
- *  Created on: 2015/06/16
+ *  Created on: 2017/06/19
  *      Author: mkobayashi
  */
 
@@ -280,9 +280,6 @@ private:
 	int flag; // FLAG
 	int mapq; // MAPQ
 	string cigar; // CIGAR
-	int x0; // x0 (aux tag)
-	int x1; // x1 (aux tag)
-	string mdz; // mdz (aux tag)
 	string seq; // alignment sequence
 	string qual; // base quality
 	string seq_tmp; // processed alignment sequence
@@ -302,8 +299,6 @@ public:
 	int checkErrFlags(); // check error FLAGs
 	string getCigarStrForBam(); // get CIGAR
 	int checkBadCigar(); // check bad CIGAR
-	void getAuxTagsForBAM(); // get aux tags (x0, x1 and mdz) for BAM alignment
-	void getAuxTagsForSAM(vector<string> record); // get aux tags (x0, x1 and mdz) for SAM alignment
 	int checkUniqMap(); // check uniq alignment
 	string getSeqStrForBam(); // get alignment sequence
 	string getQualStrForBam(); // get base quality
@@ -504,74 +499,6 @@ int Heap::checkBadCigar(){
 		return 0;
 	}
 
-}
-void Heap::getAuxTagsForBAM(){
-	int i = 0;
-	uint8_t *aux = bam_get_aux(aln);
-	x0 = -1;
-	x1 = -1;
-	mdz = "";
-	while(i < bam_get_l_aux(aln)){
-		char tag[100];
-		sprintf(tag, "%.2s", aux+i);
-		string tag_str = char2string2(tag);
-		i += 2;
-		// get X0 tag
-		if(tag_str[0] == 'X' && tag_str[1] == '0'){
-			x0 = bam_aux2i(aux+i);
-		}
-		// get X1 tag
-		if(tag_str[0] == 'X' && tag_str[1] == '1'){
-			x1 = bam_aux2i(aux+i);
-		}
-		// get MD tag
-		if(tag_str[0] == 'M' && tag_str[1] == 'D'){
-			switch (*(aux+i)) {
-				case 'Z':
-					while(*(aux+1+i) != '\0'){
-						mdz += *(aux+1+i);
-						++i;
-					}
-					break;
-			}
-		}
-		i++;i++;
-	}
-}
-void Heap::getAuxTagsForSAM(vector<string> record){
-	x0 = 0;
-	x1 = 0;
-	mdz = "";
-	for(unsigned int i = 11; i < record.size(); i++){
-		if(
-			record[i][0] == 'M' &&
-			record[i][1] == 'D' &&
-			record[i][3] == 'Z'
-		){
-			mdz = Replace(record[i], "MD:Z:", "");
-		}else if(
-				record[i][0] == 'X' &&
-				record[i][1] == '0'
-		){
-				x0 = string2int(Replace(record[i], "X0:i:", ""));
-		}else if(
-				record[i][0] == 'X' &&
-				record[i][1] == '1'
-		){
-				x1 = string2int(Replace(record[i], "X1:i:", ""));
-		}
-	}
-}
-int Heap::checkUniqMap(){
-	if(x0 >= 0 && x1 >= 0){
-		if(x0 == 1 && x1 == 0){
-			return 1;
-		}else{
-			return 0;
-		}
-	}else{
-		return 0;
-	}
 }
 string Heap::getSeqStrForBam(){
 	string seq;
@@ -1158,9 +1085,6 @@ void Heap::getNextAlnForBAM(){
 	flag = 0;
 	mapq = 0;
 	cigar = "";
-	x0 = -1;
-	x1 = -1;
-	mdz = "";
 	seq = "";
 	qual = "";
 	seq_tmp = "";
@@ -1174,9 +1098,6 @@ void Heap::cleanVariablesForSAM(){
 	flag = 0;
 	mapq = 0;
 	cigar = "";
-	x0 = -1;
-	x1 = -1;
-	mdz = "";
 	seq = "";
 	qual = "";
 	seq_tmp = "";
@@ -1198,7 +1119,7 @@ void Heap::run(){
 	// write header of vcf
 	ofstream vcf_ofs(out_file_name);
 	vcf_ofs << "##fileformat=VCFv4.2" << endl;
-	vcf_ofs << "##source=\"Heap v0.7.9\"" << endl;
+	vcf_ofs << "##source=\"Heap v0.8.0\"" << endl;
 	vcf_ofs << "##HeapCommand=" << heap_command;
 	vcf_ofs << ref_vcf;
 	vcf_ofs << "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" << endl;
@@ -1270,6 +1191,16 @@ void Heap::run(){
 			int line_count = 0;
 			while(bytes_read > 0){
 
+		    	// get FLAG
+		    	flag = aln->core.flag;
+
+				// check error FLAGs
+		    	if(checkErrFlags() == 1){
+		    		// Get next read alignment data
+		    		getNextAlnForBAM();
+		    		continue;
+		    	}
+
 		    	// get chromosome name (rname)
 				rname = chr[aln->core.tid];
 		    	if(line_count == 0){
@@ -1292,16 +1223,6 @@ void Heap::run(){
 				}
 				rnamePre = rname;
 			
-		    	// get FLAG
-		    	flag = aln->core.flag;
-
-				// check error FLAGs
-		    	if(checkErrFlags() == 1){
-		    		// Get next read alignment data
-		    		getNextAlnForBAM();
-		    		continue;
-		    	}
-
 		    	// get MAPQ
 		    	mapq = aln->core.qual;
 
@@ -1321,16 +1242,6 @@ void Heap::run(){
 					getNextAlnForBAM();
 					continue;
 		    	}
-
-				// get aux tags (x0, x1 and mdz)
-		    	getAuxTagsForBAM();
-
-				// check uniq alignment
-				if(checkUniqMap() == 0){
-					// Get next read alignment data
-					getNextAlnForBAM();
-					continue;
-				}
 
 		    	// get alignment sequence
 				seq = getSeqStrForBam();
@@ -1382,7 +1293,14 @@ void Heap::run(){
 					/* get sam data */
 					vector<string> record;
 					algorithm::split(record,line,boost::is_any_of("\t"));
+
+					/* check error flags */
 					flag = string2int(record[1]);
+			    	if(checkErrFlags() == 1){
+			    		// Get next read alignment data
+			    		continue;
+			    	}
+
 					rname = record[2];
 			    	if(line_count == 0){
 			    		rnamePre = rname;
@@ -1406,12 +1324,6 @@ void Heap::run(){
 					}
 					rnamePre = rname;
 
-					/* check error flags */
-			    	if(checkErrFlags() == 1){
-			    		// Get next read alignment data
-			    		continue;
-			    	}
-
 					/* check bad cigar */
 			    	if(checkBadCigar() == 1){
 						continue;
@@ -1419,14 +1331,6 @@ void Heap::run(){
 
 					/* check MAPQ */
 					if(mapq < min_mapq){
-						continue;
-					}
-
-					// get aux tags (x0, x1 and mdz)
-					getAuxTagsForSAM(record);
-
-					// check uniq alignment
-					if(checkUniqMap() == 0){
 						continue;
 					}
 
@@ -1467,7 +1371,7 @@ int main(int argc, char *argv[]){
 	setvbuf(stdout, (char *)NULL, _IONBF, 0); // disablement of output buffer to overwrite of progress
 	setlocale(LC_NUMERIC,"ja_JP.utf8"); // setlocale to show number with comma
 
-	string version = "Heap version 0.7.9";
+	string version = "Heap version 0.8.0";
 
 	// test required tools
 	// check bgzip
@@ -1530,7 +1434,7 @@ int main(int argc, char *argv[]){
 	string start_time_str = time_str();
 
 	// prepare object for program options
-	options_description opt("Heap version 0.7.9 options. Default values are presented in '()'.");
+	options_description opt("Heap version 0.8.0 options. Default values are presented in '()'.");
 
 	// definition of options
 	opt.add_options()
